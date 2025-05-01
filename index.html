@@ -492,10 +492,33 @@
         ::-webkit-scrollbar {
             display: none;
         }
+
+        .text {
+            color: var(--primary);
+            cursor: default;
+            font-size: 5px;
+            font-family: monospace;
+            position: fixed;
+            z-index: 200000;
+            animation: vhsShake 0.1s infinite alternate;
+            transition: transform 0.2s ease;
+            font-weight: bold;
+        }
+
+        @keyframes vhsShake {
+            0% {
+                transform: translateX(-1px);
+            }
+
+            100% {
+                transform: translateX(1px);
+            }
+        }
     </style>
 </head>
 
 <body>
+    <div class="text" id="text">ARADE NOOBE SAG</div>
     <header>
         <div class="container">
             <nav>
@@ -665,6 +688,61 @@
         </footer>
 
         <script>
+            const text = document.getElementById('text');
+            let posX = 100, posY = 100;
+            let velX = 2, velY = 2;
+
+            function clamp(v, min, max) {
+                return v < min ? min : (v > max ? max : v);
+            }
+
+            function move() {
+                const textWidth = text.offsetWidth;
+                const textHeight = text.offsetHeight;
+                const winW = window.innerWidth;
+                const winH = window.innerHeight;
+
+                // به‌روزرسانی موقعیت
+                posX += velX;
+                posY += velY;
+
+                // برخورد به دیواره‌ها
+                if (posX + textWidth >= winW || posX <= 0) velX *= -1;
+                if (posY + textHeight >= winH || posY <= 0) velY *= -1;
+
+                // Clamp برای جلوگیری از خروج از صفحه
+                posX = clamp(posX, 0, winW - textWidth);
+                posY = clamp(posY, 0, winH - textHeight);
+
+                text.style.left = posX + 'px';
+                text.style.top = posY + 'px';
+
+                requestAnimationFrame(move);
+            }
+
+            move();
+
+            document.addEventListener('mousemove', e => {
+                const rect = text.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const dx = e.clientX - centerX;
+                const dy = e.clientY - centerY;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist < 100) {
+                    // بردار فرار رو تنظیم می‌کنیم
+                    const angle = Math.atan2(dy, dx);
+                    velX = -Math.cos(angle) * 4;
+                    velY = -Math.sin(angle) * 4;
+
+                    // بعد از تغییر سرعت، فوری کلمپ می‌کنیم تا از صفحه نره
+                    const textW = text.offsetWidth;
+                    const textH = text.offsetHeight;
+                    posX = clamp(posX, 0, window.innerWidth - textW);
+                    posY = clamp(posY, 0, window.innerHeight - textH);
+                }
+            });
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 anchor.addEventListener('click', function (e) {
                     e.preventDefault();
